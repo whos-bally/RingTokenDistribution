@@ -1,6 +1,5 @@
-import java.io.DataOutputStream;
-import java.io.IOException;
-import java.io.PrintWriter;
+import java.io.*;
+import java.net.BindException;
 import java.net.Socket;
 import java.util.Date;
 
@@ -8,9 +7,8 @@ public class Connection extends Thread {
     private Socket outputLine;
     private String hostAddress;
     private int currentPort, nextNodePort;
-    //private final int WRITE_LINE = 3;
 
-    public Connection(Socket s, String hAddress, int currPort, int nextPort) {
+    public Connection(Socket s, String hAddress, int currPort, int nextPort) throws IOException {
         this.outputLine = s;
         this.hostAddress = hAddress;
         this.currentPort = currPort;
@@ -21,20 +19,54 @@ public class Connection extends Thread {
     public void run() {
 
         try {
-            // create a new data output stream
+
             System.out.println("Connection to host established: " + new Date());
 
             System.out.println("******* Passing token to next node ******");
-            Socket s = new Socket(hostAddress, nextNodePort);
+
+            printToLog();
 
             Thread.sleep(1000);
 
+            // Pass token to next node
+            Socket s = new Socket(hostAddress, nextNodePort);
+
             // close socket
-            s.close();
-        } catch (IOException e) {
+            outputLine.close();
+
+        }
+        catch (BindException e){
+            System.out.println("Can't bind socket");
             e.printStackTrace();
+            Server.isConnectionDead = true;
+            System.exit(1);
+        }
+        catch (IOException e) {
+            e.printStackTrace();
+            Server.isConnectionDead = true;
+            System.exit(1);
         } catch (InterruptedException e) {
+            System.out.println("Thread interrupted");
             e.printStackTrace();
+            Server.isConnectionDead = true;
+            System.exit(1);
         }
     }
-}
+
+    private synchronized void printToLog() throws IOException {
+
+        try(FileWriter printLog = new FileWriter("printLog.txt", true);
+            PrintWriter pw = new PrintWriter(printLog)){
+
+            pw.append("\nHost address: " + hostAddress + " | Current port: " + currentPort
+                    + " | Next node: " + nextNodePort + " | Timestamp: " + new Date());
+
+            pw.flush();
+        }
+        catch (IOException ioe){
+            System.out.println("IO Error");
+            ioe.getCause();
+        }
+    }
+
+} // end class

@@ -10,9 +10,15 @@ public class Server {
 
     private int currentPort, nextNodePort;
     private String hostAddress;
+    public static boolean isConnectionDead = false;
 
-    // Server is provided 3 arguments to know which node it is and where the next node is
-    // to pass the token
+    /** Server is provided 3 arguments to know which node it is and where the next node is
+     *  in order to pass the token
+     * @param currentPort Port number of the host
+     * @param hostAddr Host IP address
+     * @param nextNode Port number of the next host
+     */
+
     public Server(int currentPort, String hostAddr, int nextNode){
 
         // save arguments entered to console
@@ -34,7 +40,7 @@ public class Server {
 
 
         try {
-            while(true){
+            do {
                 // Accept client socket
                 socket = serverSocket.accept();
                 print("Host address: " + hostAddress + "\nCurrent port: " + currentPort
@@ -43,9 +49,11 @@ public class Server {
                 conn = new Connection(socket, hostAddress, currentPort, nextNode);
                 conn.start();
             }
+            while (!isConnectionDead);
         }
-        catch (IOException e){
+        catch (Exception e){
             e.printStackTrace();
+            System.exit(0);
         }
     }
 
